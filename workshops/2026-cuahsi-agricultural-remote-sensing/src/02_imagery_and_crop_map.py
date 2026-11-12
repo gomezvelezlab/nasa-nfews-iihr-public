@@ -40,31 +40,50 @@
 # ## Setup
 #
 # Same first cell as notebook 1: fetch the workshop code, install what is
-# missing, connect Google Drive for your results.
+# missing, connect Google Drive for your results. No GitHub account is
+# needed, because the repository is public. The comments inside the cell say
+# what each line does.
 
 # %%
-import os
-import subprocess
-import sys
-from pathlib import Path
+# ---- Python tools used by this setup cell (they all come with Python) ----
+import os                    # change the working folder
+import subprocess            # run command line programs (git, pip)
+import sys                   # tell Python where to find code
+from pathlib import Path     # work with file and folder paths
 
+# ---- Where the workshop material lives ----
+# The repository is public. Anyone can copy it.
+# You do NOT need a GitHub account, a password or a token.
 REPO_URL = "https://github.com/gomezvelezlab/nasa-nfews-iihr-public.git"
-REPO_DIR = "nasa-nfews-iihr-public"
-WORKSHOP = "workshops/2026-cuahsi-agricultural-remote-sensing"
-KEEP_RESULTS_IN_DRIVE = True     # Colab only
+REPO_DIR = "nasa-nfews-iihr-public"     # name of the copy on this machine
+WORKSHOP = "workshops/2026-cuahsi-agricultural-remote-sensing"  # our folder
+KEEP_RESULTS_IN_DRIVE = True     # Colab only. True saves your results in Drive
 
 
 def setup_workshop():
     """Find or fetch the workshop code, install requirements, return its path."""
+    # Step 1. Is the workshop code already on this machine?
+    # Look in the current folder and in the folders above it for "wsrs",
+    # the small helper package of this workshop.
     root = next((p for p in [Path.cwd(), *Path.cwd().parents]
                  if (p / "wsrs").is_dir()), None)
+
+    # Step 2. If it is not here (the usual case in Colab), copy it.
+    # "git clone" downloads a copy of the public repository.
+    # "--depth 1" takes only the latest version, which is faster.
     if root is None:
-        if not Path(REPO_DIR).is_dir():
+        if not Path(REPO_DIR).is_dir():      # skip if it was copied before
             subprocess.run(["git", "clone", "--depth", "1", REPO_URL,
                             REPO_DIR], check=True)
         root = (Path(REPO_DIR) / WORKSHOP).resolve()
-    os.chdir(root)
-    sys.path.insert(0, str(root))
+
+    # Step 3. Work from the workshop folder.
+    os.chdir(root)                     # like "cd" in a terminal
+    sys.path.insert(0, str(root))      # lets Python run "import wsrs"
+
+    # Step 4. Install the Python packages that are missing.
+    # We try to import four of them. If one is missing, pip installs the
+    # list in requirements.txt. Nothing is installed twice.
     try:
         import earthaccess, folium, rasterio, shapefile  # noqa: F401
     except ImportError:
@@ -74,18 +93,26 @@ def setup_workshop():
     return root
 
 
+# Run the setup. ROOT is the workshop folder on this machine.
 ROOT = setup_workshop()
 
-import numpy as np
-import matplotlib.pyplot as plt
-import wsrs
-from wsrs import basin, hls
+# Load the libraries used in this notebook.
+import numpy as np                  # arrays and math
+import matplotlib.pyplot as plt     # figures
+import wsrs                         # the workshop helper package
+from wsrs import basin, hls         # watershed and satellite image functions
 
+# Print the Python version and the hardware of this machine.
+# DEVICE is "cuda" when a GPU is available, otherwise "cpu".
 env = wsrs.print_environment()
 DEVICE = env["device"]
+
+# A reminder when Colab runs without a GPU.
 if env["in_colab"] and DEVICE == "cpu":
     print("\nNo GPU on this runtime. For a faster run: Runtime, Change runtime "
           "type, T4 GPU, then run this cell again. On CPU keep QUICK_DEMO = True.")
+
+# Connect Google Drive, so that notebook 3 finds the results of this one.
 if KEEP_RESULTS_IN_DRIVE:
     wsrs.connect_drive()
 print(f"Results folder: {wsrs.data_dir()}")
@@ -107,24 +134,32 @@ print(f"Results folder: {wsrs.data_dir()}")
 # how to check that for any other year before committing to it.
 
 # %%
-YEAR = 2023
-QUICK_DEMO = True
-DEMO_WIDTH_KM = 18
+YEAR = 2023              # the growing season to map
+QUICK_DEMO = True        # True = a small box (fast). False = the whole basin
+DEMO_WIDTH_KM = 18       # width of the small box, in km
 
-# Load the basin from notebook 1. If you skipped it, this fetches it again.
+# Load the basin saved by notebook 1: the polygon (geom) and the gauge
+# information (props).
 basin_file = wsrs.data_dir() / "basin.geojson"
 if basin_file.exists():
     geom, props = basin.load_geojson(basin_file)
     SITE_ID = props.get("site_id", "USGS-05451210")
 else:
+    # The file is not there (you skipped notebook 1). Ask the USGS again
+    # for the default basin, and save it.
     SITE_ID = "USGS-05451210"
     geom = basin.basin_polygon(SITE_ID)
     props = basin.site_info(SITE_ID)
     basin.save_geojson(geom, basin_file, properties=props)
 
+# The box around the whole basin (west, south, east, north, in degrees).
 full_bbox = basin.geom_bbox(geom)
+
+# The box we work in: a small box in the middle of the basin for the quick
+# demo, or the full box.
 bbox = (basin.subset_bbox(geom, DEMO_WIDTH_KM) if QUICK_DEMO else full_bbox)
 
+# Print a summary, so that you can check the settings before going on.
 print(f"basin  : {props.get('name', SITE_ID)}")
 print(f"area   : {props.get('polygon_km2', basin.area_km2(geom)):,.0f} km2")
 print(f"mode   : {'QUICK_DEMO box' if QUICK_DEMO else 'full basin'}")
@@ -173,6 +208,9 @@ print(f"year   : {YEAR}")
 # input the model takes.
 
 # %%
+# hls.DEFAULT_WINDOWS holds the three windows. Each one is written as
+# (first day, last day, name), for example ("05-01", "05-31", "May").
+# The loop prints them for the chosen year.
 for a, b, label in hls.DEFAULT_WINDOWS:
     print(f"{label:>5}: {YEAR}-{a} to {YEAR}-{b}")
 
@@ -184,9 +222,13 @@ for a, b, label in hls.DEFAULT_WINDOWS:
 # you are asked only once.
 
 # %%
-import earthaccess
+import earthaccess       # NASA's library to search and download its data
 
+# Log in. A box appears for your Earthdata username and password.
+# persist=True remembers them for the rest of this session.
 auth = earthaccess.login(persist=True)
+
+# True means that the login worked.
 print("authenticated:", auth.authenticated)
 
 # %% [markdown]
@@ -196,10 +238,15 @@ print("authenticated:", auth.authenticated)
 # touched this box during these dates?*
 
 # %%
+# Search the NASA archive, once per window. Nothing is downloaded yet.
+# "found" holds, for each window, the list of granules that touch our box.
+# A granule is one satellite image of one tile on one date.
 found = hls.search_windows(bbox, YEAR)
 
+# The loop prints, for each window, how many granules were found and on
+# which tiles.
 for label, recs in found.items():
-    tiles = sorted({r["tile"] for r in recs})
+    tiles = sorted({r["tile"] for r in recs})       # the tile names, once each
     print(f"{label:>5}: {len(recs):>3} granules over tiles {tiles}")
 
 # %% [markdown]
@@ -220,8 +267,13 @@ for label, recs in found.items():
 # Let us look at every candidate.
 
 # %%
+# Put every granule in one table: window, date, tile, cloud percent and
+# coverage percent. The column "usable" is True when the cloud cover is at
+# most 30 percent and the coverage is at least 90 percent.
 table = hls.scene_table(found)
 print(f"{len(table)} granules found, {table.usable.sum()} of them usable\n")
+
+# Show 20 lines of the table, sorted by window and then by cloud cover.
 table.sort_values(["window", "cloud_pct"]).head(20)
 
 # %% [markdown]
@@ -241,34 +293,60 @@ table.sort_values(["window", "cloud_pct"]).head(20)
 # cloud and full coverage.
 
 # %%
+# Here we start a figure with two panels side by side.
 fig, axes = plt.subplots(1, 2, figsize=(13, 4.6))
 
+# ---- Left panel: one dot per granule ----
 ax = axes[0]
+
+# The loop draws the dots of one window at a time, so that each window gets
+# its own color. Left to right is coverage, bottom to top is cloud cover.
 for label, grp in table.groupby("window"):
     ax.scatter(grp.coverage_pct, grp.cloud_pct, s=42, alpha=0.75, label=label)
+
+# Two dashed red lines mark our limits: at most 30 percent cloud and at
+# least 90 percent coverage.
 ax.axhline(30, color="#c0392b", ls="--", lw=1.2)
 ax.axvline(90, color="#c0392b", ls="--", lw=1.2)
+
+# A light green box marks the corner where both conditions hold.
 ax.add_patch(plt.Rectangle((90, -2), 12, 32, color="#2E7D32", alpha=0.10))
 ax.text(91, 2, "usable", color="#2E7D32", fontweight="bold", fontsize=10)
+
+# Axis names, title, legend and a light grid.
 ax.set_xlabel("tile coverage (percent)")
 ax.set_ylabel("cloud cover (percent)")
 ax.set_title("Every candidate granule", fontweight="bold")
 ax.legend(frameon=False)
 ax.grid(lw=0.3, alpha=0.4)
 
+# ---- Right panel: the number of usable granules in each window ----
 ax = axes[1]
+
+# The names of the windows, in the order of the season.
 order = [w[2] for w in hls.DEFAULT_WINDOWS]
+
+# Count the usable granules of each window.
 counts = [int(table[(table.window == w) & table.usable].shape[0])
           for w in order]
+
+# Draw one bar per window: green when the window has at least one usable
+# granule, red when it has none.
 bars = ax.bar(order, counts, color=["#2E7D32" if c else "#c0392b"
                                     for c in counts], width=0.55)
+
+# The loop writes the count above each bar.
 for b, c in zip(bars, counts):
     ax.text(b.get_x() + b.get_width() / 2, c + 0.06, str(c), ha="center",
             fontweight="bold")
+
+# Axis name, title and a light grid.
 ax.set_ylabel("usable granules")
 ax.set_title("Usable scenes per window (we need at least one each)",
              fontweight="bold")
 ax.grid(axis="y", lw=0.3, alpha=0.4)
+
+# Tidy the spacing between the panels and show the figure.
 plt.tight_layout()
 plt.show()
 
@@ -292,17 +370,25 @@ plt.show()
 # (Skip this cell if you are short on time; it makes a few extra queries.)
 
 # %%
-RUN_MULTIYEAR_CHECK = True
+RUN_MULTIYEAR_CHECK = True      # set it to False to skip this cell
 
 if RUN_MULTIYEAR_CHECK:
-    rows = []
+    rows = []                   # one summary line per year goes in here
+
+    # The loop repeats the search for 2016, 2019, 2024 and the year you
+    # chose. It only searches. No image is downloaded.
     for yr in sorted({2016, 2019, 2024, YEAR}):
-        f = hls.search_windows(bbox, yr)
-        t = hls.scene_table(f)
+        f = hls.search_windows(bbox, yr)      # search the three windows
+        t = hls.scene_table(f)                # the granules as a table
+
+        # Keep three numbers for that year: the granules found, the usable
+        # ones, and the lowest cloud cover.
         rows.append({"year": yr, "granules": len(t),
                      "usable": int(t.usable.sum()),
                      "min_cloud": round(float(t.cloud_pct.min()), 1)
                      if len(t) else None})
+
+    # Print the summary as a small table.
     import pandas as pd
     print(pd.DataFrame(rows).to_string(index=False))
 
@@ -316,8 +402,13 @@ if RUN_MULTIYEAR_CHECK:
 # second date fills the gap.
 
 # %%
+# Choose the granules to use, with at most 30 percent cloud and at least
+# 90 percent coverage. The function prints what it chose and why.
+# "picks" is a list of three items, one per window. Each item lists the
+# granules chosen for that window, one per tile.
 picks = hls.pick_scenes(found, cloud_max=30, coverage_min=90)
 
+# Count the files to download: six bands and one quality layer per granule.
 n_files = sum(len(hls.band_urls(r)) for sel in picks for r in sel)
 print(f"\n{sum(len(s) for s in picks)} granules, {n_files} files to download")
 
@@ -330,7 +421,12 @@ print(f"\n{sum(len(s) for s in picks)} granules, {n_files} files to download")
 # mode is nasty because it only surfaces much later.
 
 # %%
+# A folder for the downloaded files. It is on this machine, not in Drive,
+# because the files are large and are needed only in this notebook.
 raw_dir = wsrs.data_dir("raw")
+
+# Download every band of every chosen granule, then check each file.
+# A file that is incomplete is downloaded again.
 hls.download(picks, raw_dir)
 
 # %% [markdown]
@@ -340,14 +436,24 @@ hls.download(picks, raw_dir)
 # inspect it.
 
 # %%
+# The file that will hold the model input: 18 layers, that is 6 bands for
+# each of the 3 dates, cut to our box.
 stack_path = wsrs.data_dir() / f"stack_{YEAR}.tif"
+
+# Build it: join the tiles, cut them to the box, and write the 18 layers
+# into one file on a 30 m grid.
 hls.build_stack(picks, raw_dir, bbox, stack_path)
 
-import rasterio
+import rasterio          # the library that reads and writes GeoTIFF files
 
+# Read the file back into memory.
+# "stack" is an array with the shape (18, rows, columns).
+# "stack_profile" keeps the map information: grid, projection, data type.
 with rasterio.open(stack_path) as src:
     stack = src.read()
     stack_profile = src.profile
+
+# Two checks: the shape of the array, and the share of pixels with data.
 print(f"\nstack shape: {stack.shape}  (18 bands, rows, cols)")
 print(f"valid pixels in band 1: {100*(stack[0] != hls.NODATA).mean():.1f} percent")
 
@@ -358,13 +464,22 @@ print(f"valid pixels in band 1: {100*(stack[0] != hls.NODATA).mean():.1f} percen
 # wedges, and the obvious seasonal progression from bare soil to green canopy.
 
 # %%
+# Here we start a figure with three panels in a row, one per date.
 fig, axes = plt.subplots(1, 3, figsize=(15, 5.4))
+
+# The names of the three windows, and the date that was chosen in each.
 labels = [w[2] for w in hls.DEFAULT_WINDOWS]
 dates = [sel[0]["date"] for sel in picks]
+
+# The loop fills the three panels. t is the date number: 0, 1, then 2.
 for t, ax in enumerate(axes):
+    # Take the red, green and blue bands of date t, and adjust the
+    # brightness so that the image is easy to look at.
     ax.imshow(hls.stretch_rgb(stack, t))
     ax.set_title(f"{labels[t]}  {dates[t]}", fontweight="bold")
-    ax.set_axis_off()
+    ax.set_axis_off()            # an image needs no axis ticks
+
+# One title above the three panels, then show the figure.
 plt.suptitle("True color (red, green, blue)", fontweight="bold", y=1.02)
 plt.tight_layout()
 plt.show()
@@ -377,11 +492,18 @@ plt.show()
 # in July, fading by September.
 
 # %%
+# The same figure as above, with other bands.
 fig, axes = plt.subplots(1, 3, figsize=(15, 5.4))
+
+# The loop fills the three panels, one per date.
 for t, ax in enumerate(axes):
+    # idx tells the function which three bands to show as red, green and
+    # blue on screen. Here: near infrared, red and green.
     ax.imshow(hls.stretch_rgb(stack, t, idx=hls.FALSE_COLOR_IDX))
     ax.set_title(f"{labels[t]}  {dates[t]}", fontweight="bold")
     ax.set_axis_off()
+
+# One title above the three panels, then show the figure.
 plt.suptitle("False color (NIR, red, green). Red is green vegetation.",
              fontweight="bold", y=1.02)
 plt.tight_layout()
@@ -395,7 +517,12 @@ plt.show()
 # shadow, cloud adjacency and cloud.
 
 # %%
+# For each date, the percent of the pixels in our box that are flagged as
+# cloud, cloud shadow or next to a cloud.
 frac = hls.fmask_fraction(picks, raw_dir, bbox)
+
+# The loop prints one line per date, with a small bar made of text
+# (one # for every 2 percent) and a warning above 10 percent.
 for label, date, f in zip(labels, dates, frac):
     bar = "#" * int(f / 2)
     flag = "  <- consider another scene" if f > 10 else ""
@@ -410,28 +537,51 @@ for label, date, f in zip(labels, dates, frac):
 # and bright in the SWIR.
 
 # %%
+# The size of the image: h rows and w columns.
 h, w = stack.shape[1:]
+
+# Three pixels to look at, each written as (row, column): the center of the
+# image, and two points toward opposite corners.
 samples = {"center": (h // 2, w // 2),
            "upper left": (h // 4, w // 4),
            "lower right": (3 * h // 4, 3 * w // 4)}
 
+# Here we start the figure: one panel, 11 wide and 4.4 tall.
 fig, ax = plt.subplots(figsize=(11, 4.4))
+
+# The positions along the bottom axis: 0 to 17, one for each of the 18
+# numbers of a pixel.
 x = np.arange(18)
+
+# This loop draws one line per sample pixel.
 for name, (r, c) in samples.items():
-    vals = stack[:, r, c].astype(float)
-    vals[vals == hls.NODATA] = np.nan
+    vals = stack[:, r, c].astype(float)      # the 18 values of this pixel
+    vals[vals == hls.NODATA] = np.nan        # leave a gap where data is missing
+    # The file stores reflectance multiplied by 10000. Divide to get it back.
     ax.plot(x, vals / 10000, marker="o", ms=4, lw=1.6, label=name)
+
+# This loop marks the three dates on the figure. Each date takes six
+# positions along the bottom axis, one per band.
 for t in range(3):
+    # A light gray band behind the first and the third date, to tell the
+    # dates apart.
     ax.axvspan(t * 6 - 0.5, t * 6 + 5.5, color="k",
                alpha=0.05 if t % 2 == 0 else 0.0)
+    # The name of the date, written near the top of its six positions.
     ax.text(t * 6 + 2.5, ax.get_ylim()[1] * 0.95, labels[t], ha="center",
             fontsize=10, fontweight="bold")
+
+# Label the 18 positions with the six band names, repeated for each date.
 ax.set_xticks(x, (hls.BAND_LABELS * 3), rotation=45, ha="right", fontsize=8)
+
+# Axis name, title, legend and a light grid.
 ax.set_ylabel("surface reflectance")
 ax.set_title("One pixel, 18 numbers: the model's input vector",
              fontweight="bold")
 ax.legend(frameon=False)
 ax.grid(lw=0.3, alpha=0.4)
+
+# Tidy the spacing and show the figure.
 plt.tight_layout()
 plt.show()
 
@@ -468,15 +618,24 @@ plt.show()
 # model is public.
 
 # %%
-from huggingface_hub import hf_hub_download
-from wsrs import model as prithvi
+from huggingface_hub import hf_hub_download     # downloads public model files
+from wsrs import model as prithvi               # the model, written in PyTorch
 
+# The public page of the model on Hugging Face.
 REPO = "ibm-nasa-geospatial/Prithvi-EO-1.0-100M-multi-temporal-crop-classification"
+
+# Download the file with the trained weights (1.7 GB). If you run the cell
+# again, the file that is already here is reused.
 ckpt = hf_hub_download(REPO,
                        "multi_temporal_crop_classification_Prithvi_100M.pth")
 print(f"checkpoint: {Path(ckpt).stat().st_size/1e9:.2f} GB")
 
+# Build the network and fill it with the trained weights.
+# It is placed on DEVICE: the GPU ("cuda") or the processor ("cpu").
 net = prithvi.load_model(ckpt, device=DEVICE)
+
+# Count the parameters, the numbers that the model learned in training:
+# first all of them, then those of the encoder alone.
 n_params = sum(p.numel() for p in net.parameters())
 n_encoder = sum(p.numel() for p in net.backbone.parameters())
 print(f"loaded {n_params/1e6:.0f} million parameters onto {DEVICE} "
@@ -486,6 +645,8 @@ print(f"loaded {n_params/1e6:.0f} million parameters onto {DEVICE} "
 # ### The 13 classes
 
 # %%
+# The loop prints the 13 class names with their numbers, starting at 1.
+# The crop map stores one of these numbers in every pixel.
 for i, name in enumerate(prithvi.CLASSES, start=1):
     print(f"{i:>3}  {name}")
 print("\n  0  no data (we use it for 'outside the basin' as well)")
@@ -498,6 +659,9 @@ print("\n  0  no data (we use it for 'outside the basin' as well)")
 # with the published config and must be used exactly.
 
 # %%
+# One mean and one standard deviation per band, in the order blue, green,
+# red, narrow NIR, SWIR 1, SWIR 2. Before a pixel enters the model, each
+# value becomes (value - mean) / standard deviation.
 print("band means :", prithvi.MEANS)
 print("band stds  :", prithvi.STDS)
 
@@ -509,51 +673,91 @@ print("band stds  :", prithvi.STDS)
 # which is most of the saving in an irregularly shaped watershed.
 
 # %%
-import time
+import time                                      # to time the run
 
-import torch
-from rasterio.features import geometry_mask
-from rasterio.warp import transform_geom
+import torch                                     # the library that runs the model
+from rasterio.features import geometry_mask      # polygon to pixel mask
+from rasterio.warp import transform_geom         # change of map projection
 
-IMG = 224
+IMG = 224        # the model reads squares of 224 by 224 pixels
 
+# ---- Step 1. Which pixels are inside the basin? ----
+# Read the grid of the stack: its position on Earth (transform), its width W
+# and its height H, in pixels.
 with rasterio.open(stack_path) as src:
     transform, W, H = src.transform, src.width, src.height
+
+# The basin polygon is in longitude and latitude. Move it to the map
+# projection of the imagery, so that the two line up.
 geom_proj = transform_geom("EPSG:4326", str(stack_profile["crs"]), geom)
+
+# "inside" is an image of True and False: True where a pixel is in the basin.
 inside = geometry_mask([geom_proj], out_shape=(H, W), transform=transform,
                        invert=True)
 
+# ---- Step 2. Cut the image into squares of 224 by 224 pixels ----
+# These squares are the "model tiles" of the text above.
+# xs and ys are the left and top edges of the squares. The last square of
+# each row and column is moved back, so that it ends at the image border.
 xs = sorted(set(list(range(0, max(W - IMG, 0) + 1, IMG)) + [max(W - IMG, 0)]))
 ys = sorted(set(list(range(0, max(H - IMG, 0) + 1, IMG)) + [max(H - IMG, 0)]))
+
+# Keep only the squares that touch the basin.
 windows = [(y, x) for y in ys for x in xs
            if inside[y:y + IMG, x:x + IMG].any()]
 print(f"{len(windows)} tiles to classify "
       f"({len(xs)*len(ys)} in the box, the rest fall outside the basin)")
 
+# ---- Step 3. Classify the squares, one at a time ----
+# The empty crop map: zero everywhere. Zero means no data.
 pred = np.zeros((H, W), dtype=np.uint8)
-t0 = time.time()
+t0 = time.time()                 # start the clock
+
+# The loop takes one square at a time: cut it out, give it to the model,
+# and paste the answer into the crop map.
 for i, (y, x) in enumerate(windows, start=1):
+    # Cut one square out of the stack: 18 layers, 224 by 224 pixels.
     chip = stack[:, y:y + IMG, x:x + IMG]
+
+    # A square at the border can be smaller than 224 pixels. Fill the rest
+    # with the no data value, so that the model always gets a full square.
     if chip.shape[1] < IMG or chip.shape[2] < IMG:
         pad = np.full((18, IMG, IMG), hls.NODATA, np.int16)
         pad[:, :chip.shape[1], :chip.shape[2]] = chip
         chip = pad
+
+    # Mark the pixels with missing data in at least one layer.
+    # Skip the square when it holds no data at all.
     nodata = np.any(chip == hls.NODATA, axis=0)
     if nodata.all():
         continue
+
+    # Prepare the square for the model: standardize each band, then give
+    # the 18 layers the shape the model was trained with (6, 3, 224, 224).
     xt = torch.from_numpy(prithvi.normalize(chip)).reshape(6, 3, IMG, IMG)
+
+    # Run the model. torch.no_grad() tells PyTorch that we are predicting,
+    # not training. The result holds 13 scores per pixel, one per class.
     with torch.no_grad():
         logits = net(xt[None].to(DEVICE))[0]
+
+    # Keep, for each pixel, the class with the highest score. Add 1 because
+    # Python counts from 0 and our classes are numbered from 1.
     tile = (logits.argmax(0).cpu().numpy() + 1).astype(np.uint8)
-    tile[nodata] = 0
+    tile[nodata] = 0             # no data in, no class out
+
+    # Paste the classified square at its place in the crop map.
     hh = min(IMG, H - y)
     ww = min(IMG, W - x)
     pred[y:y + hh, x:x + ww] = tile[:hh, :ww]
+
+    # Report the progress every 5 squares, and at the end.
     if i % 5 == 0 or i == len(windows):
         el = time.time() - t0
         print(f"  {i}/{len(windows)} tiles, {el:5.1f}s elapsed, "
               f"{el/i:4.1f}s per tile", flush=True)
 
+# ---- Step 4. Erase everything outside the basin ----
 pred[~inside] = 0
 print(f"\ndone in {time.time()-t0:.0f} seconds on {DEVICE}")
 
@@ -561,13 +765,17 @@ print(f"\ndone in {time.time()-t0:.0f} seconds on {DEVICE}")
 # ## 10. First look at the result
 
 # %%
-from wsrs import viz
+from wsrs import viz      # the map and figure helpers of this workshop
 
+# Here we start a figure and draw the crop map in it, with one color per
+# class and a legend below.
 fig, ax = plt.subplots(figsize=(10, 8))
 viz.show_classified(pred, ax=ax,
                     title=f"{props.get('name','basin')}  {YEAR}")
 plt.show()
 
+# A table with one line per class: number of pixels, area in km2 and
+# percent of the classified area. The largest class comes first.
 areas = viz.class_area_table(pred)
 areas
 
@@ -585,9 +793,13 @@ areas
 #   The model was trained nationally and can emit them as noise.
 
 # %%
+# viz.IMPLAUSIBLE_MIDWEST lists two classes that should not occur in the
+# Midwest: cotton and sorghum. Keep the ones that appear in our map.
 implausible = {k: v for k, v in viz.IMPLAUSIBLE_MIDWEST.items()
                if (pred == k).any()}
+
 if implausible:
+    # Add up the share of the classified area that they cover, in percent.
     tot = sum(100 * (pred == k).sum() / max((pred > 0).sum(), 1)
               for k in implausible)
     print(f"classes unlikely in the Midwest are present: "
@@ -604,8 +816,15 @@ else:
 # already styled in QGIS or ArcGIS.
 
 # %%
+# The name of the output file, in the results folder.
 pred_path = wsrs.data_dir() / f"crop_map_{YEAR}.tif"
+
+# Save the crop map as a GeoTIFF. It borrows the grid and the projection of
+# the stack, so that the map lands at the right place on Earth, and it
+# stores the class colors in the file.
 viz.save_classified(pred, stack_path, pred_path)
+
+# The loop prints a short description of the saved file.
 for k, v in viz.describe_raster(pred_path).items():
     print(f"{k:>14}: {v}")
 
@@ -619,10 +838,15 @@ for k, v in viz.describe_raster(pred_path).items():
 # %%
 OTHER_YEAR = ...          # for example 2024
 
+# The three dots are a placeholder. Until you replace them, the cell only
+# prints a reminder.
 if OTHER_YEAR is ...:
     print("Replace ... with a year, then run this cell again.")
 else:
+    # Search the archive for that year and put the granules in a table.
     other = hls.scene_table(hls.search_windows(bbox, OTHER_YEAR))
+
+    # Count the usable granules in each window. A window with none shows 0.
     per_window = (other[other.usable].groupby("window").size()
                   .reindex([w[2] for w in hls.DEFAULT_WINDOWS], fill_value=0))
     print(f"{OTHER_YEAR}: {len(other)} granules, {int(other.usable.sum())} usable")

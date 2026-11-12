@@ -165,26 +165,64 @@ def _warp_to_wgs84(path, bands=(1,), resampling="nearest",
 
 
 # --------------------------------------------------------------- folium -----
+# Background maps for the interactive maps.
+#
+# Why not OpenStreetMap, the folium default? Its public tile server enforces
+# a usage policy and blocks the requests that come from a Google Colab output
+# cell. Every tile then reads "403 Access blocked" instead of showing a map.
+# The two servers below do not apply such a rule, so the map loads in Colab.
+BASEMAPS = {
+    "Topographic map": {
+        "tiles": "https://basemap.nationalmap.gov/arcgis/rest/services/"
+                 "USGSTopo/MapServer/tile/{z}/{y}/{x}",
+        "attr": "U.S. Geological Survey, The National Map",
+        "max_native_zoom": 16,
+    },
+    "Satellite": {
+        "tiles": "https://server.arcgisonline.com/ArcGIS/rest/services/"
+                 "World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        "attr": "Esri World Imagery. Sources: Esri, Maxar, Earthstar "
+                "Geographics, and the GIS User Community",
+        "max_native_zoom": 19,
+    },
+}
+
+
 def basin_map(geom: dict, center=None, zoom: int = 10, site=None,
               tiles: str = "satellite"):
-    """A folium map centered on a basin, with the outline drawn on top."""
+    """A folium map centered on a basin, with the outline drawn on top.
+
+    tiles = "satellite" opens on satellite imagery (the default).
+    tiles = "topo" opens on the USGS topographic map.
+    Both backgrounds are always in the layer list, so you can switch.
+    """
     import folium
     from shapely.geometry import shape
+
+    # Center the map on the middle of the basin unless a center is given.
     if center is None:
         c = shape(geom).centroid
         center = [c.y, c.x]
-    if tiles == "satellite":
-        m = folium.Map(location=center, zoom_start=zoom, tiles=None)
-        folium.TileLayer(
-            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/"
-                  "World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            attr="Esri World Imagery", name="Satellite").add_to(m)
-        folium.TileLayer("OpenStreetMap", name="Street map").add_to(m)
-    else:
-        m = folium.Map(location=center, zoom_start=zoom, tiles=tiles)
+
+    # Start with an empty map (tiles=None), then add our own backgrounds.
+    m = folium.Map(location=center, zoom_start=zoom, tiles=None)
+
+    # folium shows the background that was added last. So the one we want
+    # to see first goes last in this list.
+    first = "Topographic map" if tiles == "topo" else "Satellite"
+    order = [name for name in BASEMAPS if name != first] + [first]
+    for name in order:
+        b = BASEMAPS[name]
+        folium.TileLayer(tiles=b["tiles"], attr=b["attr"], name=name,
+                         max_native_zoom=b["max_native_zoom"],
+                         max_zoom=19).add_to(m)
+
+    # The basin outline in red, lightly filled.
     folium.GeoJson(geom, name="Basin",
                    style_function=lambda _: {"color": "#e31a1c", "weight": 2.5,
                                              "fillOpacity": 0.05}).add_to(m)
+
+    # A blue marker on the stream gauge, when one is given.
     if site:
         folium.Marker([site["lat"], site["lon"]],
                       tooltip=f"{site.get('site_id','')} {site.get('name','')}",

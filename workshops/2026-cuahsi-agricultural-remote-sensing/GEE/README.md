@@ -4,6 +4,21 @@ A map that stays on your laptop reaches nobody. This folder shows the simplest w
 
 The whole exercise takes about 15 minutes.
 
+## The data: two files to download
+
+The data shown in the app are in this repository, in the folder [`GEE/data`](data). Click each link below and your browser saves the file on your computer. No GitHub account is needed.
+
+| Click to download | What it is | Size |
+|---|---|---|
+| [**south_fork_crop_map_2023.tif**](https://github.com/gomezvelezlab/nasa-nfews-iihr-public/raw/main/workshops/2026-cuahsi-agricultural-remote-sensing/GEE/data/south_fork_crop_map_2023.tif) | The crop map, a GeoTIFF image. This is the layer that the app displays. | 94 KB |
+| [**south_fork_watershed.zip**](https://github.com/gomezvelezlab/nasa-nfews-iihr-public/raw/main/workshops/2026-cuahsi-agricultural-remote-sensing/GEE/data/south_fork_watershed.zip) | The watershed boundary, a zipped shapefile. Keep it zipped: Earth Engine takes the zip file as it is. | 15 KB |
+
+The rest of this page is three moves:
+
+1. **Download** the two files above (Step 1).
+2. **Upload** them to Google Earth Engine (Steps 2 to 5).
+3. **Paste** the script, **run** it and **publish** the app (Steps 6 to 9).
+
 ## What is in this folder
 
 | File | What it is |
@@ -14,7 +29,7 @@ The whole exercise takes about 15 minutes.
 | `data/south_fork_watershed.geojson` | The same boundary as GeoJSON, used by the notebooks. |
 | `crop_map_app.js` | The script to copy and paste into the Earth Engine Code Editor. |
 
-You can follow the steps with these example files, or with your own two files from notebook 3 (`crop_map_<year>_cog.tif` and `watershed.zip`). The steps are identical.
+Only the first two files of the `data` folder are uploaded to Earth Engine. The others are there for readers who want to open the boundary in QGIS, ArcGIS or Python.
 
 ## Before you start
 
@@ -22,8 +37,16 @@ You need a Google account with Earth Engine enabled. If you have not registered 
 
 ## Step 1. Get the two files on your computer
 
-- **Example files:** on GitHub, open `data/south_fork_crop_map_2023.tif`, then click the download button (the arrow pointing down, labeled *Download raw file*). Do the same for `data/south_fork_watershed.zip`.
-- **Your own files:** notebook 3 downloads `crop_map_<year>_cog.tif` and `watershed.zip` to your computer in its section 6.
+Click the two links in the table at the top of this page, or these:
+
+- [south_fork_crop_map_2023.tif](https://github.com/gomezvelezlab/nasa-nfews-iihr-public/raw/main/workshops/2026-cuahsi-agricultural-remote-sensing/GEE/data/south_fork_crop_map_2023.tif)
+- [south_fork_watershed.zip](https://github.com/gomezvelezlab/nasa-nfews-iihr-public/raw/main/workshops/2026-cuahsi-agricultural-remote-sensing/GEE/data/south_fork_watershed.zip)
+
+Both files land in the *Downloads* folder of your computer. Do not open them and do not unzip the zip file. You only need to know where they are, because Steps 3 and 4 ask you to select them.
+
+If a link opens a GitHub page instead of saving the file, click the download button on that page (the arrow pointing down, labeled *Download raw file*).
+
+**Using your own map instead.** Notebook 3 saves `crop_map_<year>_cog.tif` and `watershed.zip` on your computer in its section 6. Use these two files in place of the example files. All the steps below are the same.
 
 ## Step 2. Open the Code Editor
 

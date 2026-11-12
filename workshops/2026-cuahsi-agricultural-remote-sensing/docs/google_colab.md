@@ -23,7 +23,8 @@ If no GPU is available at that moment, stay on CPU and keep `QUICK_DEMO = True` 
 ## Run the cells
 
 - Click a cell and press **Shift + Enter**, or click the play button at its left. Run the cells from top to bottom.
-- The first cell of every notebook, *Setup*, copies the workshop code to the cloud machine and installs a few packages. It takes about one minute the first time.
+- The first cell of every notebook, *Setup*, copies the workshop code to the cloud machine and installs a few packages. It takes about one minute the first time. The repository is public, so this copy needs no GitHub account, no password and no token.
+- Every code cell carries comments (the lines that start with `#`) that say in plain words what the next lines do. Read them as you go.
 - Avoid *Run all* in notebooks 2 and 4: they stop to ask for a login, and it is better to read each step.
 
 ## Let Colab save your results in Google Drive
@@ -58,6 +59,8 @@ One cell asks for your Earthdata username and password. Type each one in the box
 | Red text scrolls during the Setup cell | Package installation notes | Ignore it unless the cell ends with an error |
 | *You have reached your GPU limit* | The free GPU quota of your account is used up | Switch the runtime back to CPU and keep `QUICK_DEMO = True` |
 | The Drive permission window does not appear | A pop-up blocker is active | Allow pop-ups for `colab.research.google.com` and run the cell again |
+| The map background shows gray squares that read *403 Access blocked* | The cloud machine still holds an older copy of the workshop code | Choose **Runtime**, **Disconnect and delete runtime**, open the notebook again from the **Open in Colab** badge, and run it from the Setup cell |
+| The map background stays empty | The map server did not answer | Use the layer box in the upper right corner of the map to switch between *Satellite* and *Topographic map* |
 
 ## The four notebooks
 

@@ -47,8 +47,8 @@ A map that stays on a laptop reaches nobody. The [`GEE`](GEE/) folder shows the 
 |---|---|
 | [`GEE/README.md`](GEE/README.md) | Step by step instructions: upload a GeoTIFF and a shapefile to Google Earth Engine, paste the script, publish the app |
 | [`GEE/crop_map_app.js`](GEE/crop_map_app.js) | The script to copy and paste into the Earth Engine Code Editor. It draws the crop map, the watershed boundary, a legend, and a click inspector |
-| `GEE/data/south_fork_crop_map_2023.tif` | Example crop map: South Fork Iowa River basin, Iowa, 2023 growing season |
-| `GEE/data/south_fork_watershed.zip` | Example watershed boundary as a zipped shapefile (also provided unzipped and as GeoJSON) |
+| [`GEE/data/south_fork_crop_map_2023.tif`](https://github.com/gomezvelezlab/nasa-nfews-iihr-public/raw/main/workshops/2026-cuahsi-agricultural-remote-sensing/GEE/data/south_fork_crop_map_2023.tif) (click to download) | The crop map displayed by the app: South Fork Iowa River basin, Iowa, 2023 growing season |
+| [`GEE/data/south_fork_watershed.zip`](https://github.com/gomezvelezlab/nasa-nfews-iihr-public/raw/main/workshops/2026-cuahsi-agricultural-remote-sensing/GEE/data/south_fork_watershed.zip) (click to download) | The watershed boundary as a zipped shapefile, uploaded as it is (also provided unzipped and as GeoJSON) |
 
 The steps work with the example files or with the two files that notebook 3 produces for any other basin.
 
@@ -112,7 +112,7 @@ Everything used in the notebooks is open. Please keep these attributions when yo
 | USDA NASS Cropland Data Layer | Reference labels for the agreement assessment in notebook 4 | USDA National Agricultural Statistics Service, read in Google Earth Engine as `USDA/NASS/CDL` | Public domain. Cite: USDA National Agricultural Statistics Service Cropland Data Layer (year used), https://www.nass.usda.gov/Research_and_Science/Cropland/ |
 | USGS Network Linked Data Index and National Water Information System | Watershed boundary, drainage area, river network and gauge list in notebook 1 | USGS water data web services, no account | Public domain |
 | Google Earth Engine | Hosting the two assets and the public app, and access to the Cropland Data Layer in notebook 4 | Google, Cloud project registered for noncommercial use | Google Earth Engine terms of service |
-| Basemaps in the interactive map of notebook 3 | Background imagery and streets | Esri World Imagery, OpenStreetMap | Esri attribution required. OpenStreetMap data under ODbL |
+| Basemaps in the interactive maps of notebooks 1 and 3 | Background satellite imagery and topographic map | Esri World Imagery; USGS The National Map (USGSTopo) | Esri attribution required. The National Map is in the public domain |
 | Example data in `GEE/data` | Crop map and watershed boundary used in the publishing exercise | Produced by the instructors with notebooks 1 to 3 from the sources above | CC BY 4.0 |
 | Figures in `docs/figures/` | Workshop banner and the Iowa basins map | Produced by the instructors from their own Prithvi-EO runs over NASA HLS imagery, 2018 to 2025 | CC BY 4.0 |
 
@@ -144,7 +144,8 @@ wsrs/                      helper package, documented and meant to be read
 GEE/
   README.md                how to publish a crop map as a Google Earth Engine App
   crop_map_app.js          the script to paste into the Earth Engine Code Editor
-  data/                    example crop map (GeoTIFF) and watershed boundary (shapefile, GeoJSON)
+  data/                    the data displayed by the app: crop map (GeoTIFF) and watershed
+                           boundary (shapefile, GeoJSON), with download links in its README
 docs/
   setup_accounts.md        the three accounts to create before the session
   google_colab.md          running the notebooks in Google Colab
