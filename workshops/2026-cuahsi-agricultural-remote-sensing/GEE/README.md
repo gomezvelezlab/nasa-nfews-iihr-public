@@ -133,6 +133,8 @@ Open the address in a private browser window, where you are not signed in to Goo
 5. **Title and legend.** A panel built from the two lists in section 2.
 6. **Click to read a pixel.** Asks Earth Engine for the class at the clicked point and writes its name in the panel.
 
+Inside the script, each section opens with a short note that says what the section does and what it defines, and every line of code is explained by the comment above it. You can read the script from top to bottom without knowing JavaScript.
+
 Everything else you see in a published app, such as zooming, panning and the layer list, comes from Earth Engine itself.
 
 ## Going further
