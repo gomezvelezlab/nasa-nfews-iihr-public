@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use these materials, please cite them as below, together with the original data and model sources listed in the README of the folder you used."
+title: "nasa-nfews-iihr-public: public materials from the project Integrating NASA Earth Observations and In Situ Sensor Networks to Predict Nitrate Dynamics in Iowa's Streams and Rivers"
+type: software
+authors:
+  - family-names: Abdelkader
+    given-names: Mohamed
+    affiliation: "IIHR Hydroscience and Engineering, University of Iowa"
+    email: mohamed-abdelkader@uiowa.edu
+  - family-names: Vergara
+    given-names: Humberto
+    affiliation: "IIHR Hydroscience and Engineering, University of Iowa"
+repository-code: "https://github.com/gomezvelezlab/nasa-nfews-iihr-public"
+license: GPL-3.0
+date-released: "2026-11-11"
+version: "1.0.0"
+keywords:
+  - remote sensing
+  - Harmonized Landsat Sentinel-2
+  - geospatial foundation model
+  - Prithvi
+  - crop classification
+  - Google Earth Engine
+  - nitrate
+  - Iowa
+  - CUAHSI
+abstract: "Public materials from a NASA Earth Action Water Resources Program project on nitrate dynamics in Iowa streams and rivers, including hands-on workshop materials on agricultural remote sensing with cloud platforms and geospatial foundation models. This work was supported by the NASA Earth Action Water Resources Program (Grant number 80NSSC26K0798)."

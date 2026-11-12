@@ -218,3 +218,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------------------
+# Workshop materials (workshops/*)
+# ---------------------------------------------------------------------------
+# data folders are rebuilt by the notebooks, never committed
+workshops/*/data/*
+!workshops/*/data/README.md
+# rasters and generated web maps anywhere in the tree
+*.tif
+*.tiff
+workshops/*/**/*.html
+# except the small example crop map that the GEE folder ships on purpose
+!workshops/*/GEE/data/*.tif
+# model weights
+*.pth
+*.pt
+# credentials that earthaccess or Earth Engine may write
+.netrc
+_netrc
+# notebook checkpoints
+.ipynb_checkpoints/

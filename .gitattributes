@@ -1,0 +1,17 @@
+# Keep line endings stable across Windows, macOS and Linux, and never let git
+# alter the binary example data.
+*.py     text eol=lf
+*.ipynb  text eol=lf
+*.js     text eol=lf
+*.md     text
+*.cff    text
+*.txt    text
+*.geojson text eol=lf
+*.tif    binary
+*.png    binary
+*.zip    binary
+*.shp    binary
+*.shx    binary
+*.dbf    binary
+*.prj    -text
+*.cpg    -text
